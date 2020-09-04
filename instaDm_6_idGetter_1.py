@@ -66,11 +66,13 @@ print("로그인 성공")
 ############################################ 사용자 함수 Start ############################################
 ### 1. try 사진 클릭. except 사진이 로드 되지 않는 오류가 생긴다면?
 def photo_click(photo):
-    num_except = 0
     try:
         photo.click()
         ### div class="e1e1d" 셀럽 아이디
+        #if(num_except < 3):
         wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@class='e1e1d']")))
+        #else:
+        #    browser.find_element_by_xpath("//a[@class='coreSpriteRightPaginationArrow']").click()
         print("사용자 정의 함수 photo_click: try")
     except:
         print("사용자 정의 함수 photo_click: except 시작")
@@ -84,10 +86,9 @@ def photo_click(photo):
         sleep(2)
         ActionChains(browser).send_keys(Keys.PAGE_UP).perform()
         sleep(2)
-        ### recursion
+        
         print("사용자 정의 함수 photo_click: except 끝")
         photo_click(photo)
-        #wait.until(EC.presence_of_element_located((By.XPATH, "//div[@class='e1e1d']")))
 
 ### 2. 인스타그램의 스팸 방지 시스템을 우회하기 위해 클릭한 인스타를 꼭 눈팅하기로 하자.
 ### 똑같은 패턴을 보이면 안 되니까 random을 사용하자.
@@ -193,6 +194,8 @@ while(True):
         ### 게시물[0] 팔로워[1] 팔로잉[2] span class="g47SY " title= 수
         wait.until(EC.visibility_of_element_located((By.XPATH, "//span[@class='g47SY ']")))
         num_of_followers = browser.find_elements_by_xpath("//span[@class='g47SY ']")[1].get_attribute('title')
+        if(len(num_of_followers) == 0):
+            num_of_followers = browser.find_elements_by_xpath("//span[@class='g47SY ']")[1].text
 
         ### 팔로워 수가 1000명 미만이면 콤마가 없다.
         if(len(num_of_followers) > 3):
