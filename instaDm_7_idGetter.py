@@ -74,10 +74,14 @@ class ig_class:
             photo.click()
             ### div class="e1e1d" 셀럽 아이디
             if(self.num_except < 3):
+                print("사용자 정의 함수 photo_click: try")
                 wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@class='e1e1d']")))
             else:
-                browser.find_element_by_xpath("//a[@class='coreSpriteRightPaginationArrow']").click()
-            print("사용자 정의 함수 photo_click: try")
+                print("rightpagination 클릭")
+                wait.until(EC.visibility_of_element_located((By.XPATH, "//a[@class=' _65Bje  coreSpriteRightPaginationArrow']")))
+                browser.find_element_by_xpath("//a[@class=' _65Bje  coreSpriteRightPaginationArrow']").click()
+                self.num_except = 0
+                wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@class='e1e1d']")))
         except:
             print("사용자 정의 함수 photo_click: except 시작")
             ActionChains(browser).send_keys(Keys.ESCAPE).perform()
@@ -91,6 +95,7 @@ class ig_class:
             ActionChains(browser).send_keys(Keys.PAGE_UP).perform()
             sleep(2)
             self.num_except += 1
+            print("exception 발생 횟수", self.num_except)
             print("사용자 정의 함수 photo_click: except 끝")
             self.photo_click(photo)
 
@@ -165,9 +170,11 @@ while(True):
 
         ### 아이디가 나타나는 a tag를 인식하여 https://www.instagram.com/셀럽아이디/ 를 획득
         try:
+            wait.until(EC.visibility_of_element_located((By.XPATH, '/html/body/div[4]/div[2]/div/article/header/div[1]/div/a')))
             celeb_url = browser.find_element_by_xpath('/html/body/div[4]/div[2]/div/article/header/div[1]/div/a').get_attribute('href')
         except:
-            celeb_url = browser.find_element_by_xpath('/html/body/div[4]/div[2]/div/article/header/div[2]/div[1]/div[1]/span/a').get_attribute('href')
+            wait.until(EC.visibility_of_element_located((By.XPATH, '/html/body/div[4]/div[1]/div/div/a[2]')))
+            celeb_url = browser.find_element_by_xpath('/html/body/div[4]/div[1]/div/div/a[2]').get_attribute('href')
 
         ### https://www.instagram.com/셀럽아이디/ 에서 셀럽아이디를 regex로 획득
         celeb_id = re.search(r'.com/(.*)/.*', celeb_url).group(1)

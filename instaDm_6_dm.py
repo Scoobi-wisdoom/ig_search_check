@@ -11,7 +11,8 @@ import json
 import pandas as pd
 
 ###################################################################################
-## 아래에 message라는 항목에 보낼 메시지를 입력한다.
+## 보낼 메시지를 입력한다.
+# message = ''
 
 ## 로그인
 insta_id = input("Insert your id")
@@ -123,12 +124,13 @@ for celeb in message_data_not_yet["celeb_id"]:
         textbox.send_keys(message)
         textbox.send_keys(Keys.RETURN)
         print("메지지 보내기 성공")
+        ## DM 내역 저장하기
+        message_data.loc[message_data['celeb_id'] == celeb, "message"] = message
+        #message_data.loc[message_data['celeb_id'] == celeb, "message"] = "test"
+        with open("data_DM.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
     except:
         print(celeb, "에게 DM 보내기 실패")
 
-    ## DM 내역 저장하기
-    #message_data.loc[message_data['celeb_id'] == celeb, "message"] = message
-    message_data.loc[message_data['celeb_id'] == celeb, "message"] = "test"
-    with open("data_DM.json", "w", encoding="utf-8") as f:
-        f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
-    sleep(random.uniform(60,120))
+    
+    sleep(random.uniform(60,180))
