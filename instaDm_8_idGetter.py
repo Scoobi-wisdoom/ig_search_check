@@ -14,12 +14,13 @@ import re
 
 insta_id = input("Insert your id:")
 insta_pwd= input("Insert the password")
-search_word = input("insert the search keyword")
+#search_word = input("insert the search keyword")
 #keyword1: 공구진행, 공구, 공구마켓
 #keyword2: 운동
 #keyword3: 뷰티
 #keyword4: 셀카
 #keyword5: 다이어트
+#keyword5: 맘스타그램
 
 ## instagram 피드에서 end키를 몇 번 눌렀는지 체크
 end_key_count = 0
@@ -134,13 +135,15 @@ print("알림 설정 나중에 하기 성공")
 
 
 ## 검색
-search_box = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#react-root > section > nav > div._8MQSO.Cx7Bp > div > div > div.LWmhU._0aCwM > input")))
-search_box.send_keys(search_word)
-wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#react-root > section > nav > div._8MQSO.Cx7Bp > div > div > div.LWmhU._0aCwM > div.aIYm8.coreSpriteSearchClear")))
-print("엑스 박스 생성")
-search_box.send_keys(Keys.ENTER)
-search_box.send_keys(Keys.ENTER)
-print("검색 성공")
+#search_box = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#react-root > section > nav > div._8MQSO.Cx7Bp > div > div > div.LWmhU._0aCwM > input")))
+#search_box.send_keys(search_word)
+#wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#react-root > section > nav > div._8MQSO.Cx7Bp > div > div > div.LWmhU._0aCwM > div.aIYm8.coreSpriteSearchClear")))
+#print("엑스 박스 생성")
+#search_box.send_keys(Keys.ENTER)
+#search_box.send_keys(Keys.ENTER)
+search_done = input("검색을 완료했으면 y키를 누른 후 엔터")
+if(search_done.lower() != 'y'):
+    raise Exception
 
 ## 검색 실행 후 UI
 ### instagram ui에서 1행 3개 사진이 div class="Nnq7C weEfm"로 묶여 있다.
