@@ -12,21 +12,22 @@ import pandas as pd
 
 ###################################################################################
 ## 보낼 메시지를 입력한다.
-# message = ''
+with open("backup/message.txt", "r", encoding="utf-8") as f:
+    message = f.read()
 
 ## 로그인
 insta_id = input("Insert your id")
 insta_pwd= input("insert the password")
 
 ## getID.py로 만든 데이터를 로드. 열 이름은 [celeb_id, followers]
-with open("data1.json", "r", encoding="utf-8") as f:
+with open("backup/test.json", "r", encoding="utf-8") as f:
     json_data = f.read()
 
 pd_data = pd.DataFrame(json.loads(json_data))
 pd_data = pd_data.astype({"celeb_id": str, "followers": int})
 
 ## dm.py로 만든 데이터를 로드. 열 이름은 [celeb_id, followers, message]
-with open("data_DM.json", "r", encoding="utf-8") as f:
+with open("backup/data_DM.json", "r", encoding="utf-8") as f:
     json_data = f.read()
 message_data = pd.DataFrame(json.loads(json_data))
 
@@ -82,7 +83,6 @@ except:
 
 for celeb in message_data_not_yet["celeb_id"]:
     ### 보낼 메시지를 입력한다. celeb_id는 자동으로 메시지에 포함되게 한다.
-    message =  f"안녕하세요 {celeb}님"
     ## DM 쓰기 버튼 클릭
     try:
         searchuser = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.EQ1Mr')))
@@ -115,19 +115,24 @@ for celeb in message_data_not_yet["celeb_id"]:
 
     ## 텍스트 박스 찾기
     try:
-        textbox = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.focus-visible')))
+        textbox = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[2]/textarea')))
     except:
         print("텍스트 박스 찾기 실패")
 
     ## DM 보내기
     try:
-        textbox.send_keys(message)
-        textbox.send_keys(Keys.RETURN)
-        print("메지지 보내기 성공")
+        ## textbox에 메시지 입력
+        browser.execute_script("arguments[0].value = arguments[1]", browser.find_element_by_xpath('//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[2]/textarea'), message)
+        textbox.send_keys(Keys.SPACE)
+        ## 버튼 클릭
+        send_xpath = '//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[3]/button'
+        wait.until(EC.element_to_be_clickable((By.XPATH, send_xpath)))
+        browser.find_element_by_xpath(send_xpath).click()
+        print("메시지 보내기 성공")
         ## DM 내역 저장하기
         message_data.loc[message_data['celeb_id'] == celeb, "message"] = message
         #message_data.loc[message_data['celeb_id'] == celeb, "message"] = "test"
-        with open("data_DM.json", "w", encoding="utf-8") as f:
+        with open("backup/data_DM.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
     except:
         print(celeb, "에게 DM 보내기 실패")
