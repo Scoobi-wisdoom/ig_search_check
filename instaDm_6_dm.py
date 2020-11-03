@@ -14,6 +14,7 @@ import pandas as pd
 ## 보낼 메시지를 입력한다.
 with open("backup/message.txt", "r", encoding="utf-8") as f:
     message = f.read()
+#browser.find_element_by_tag_name("h2").text == '죄송합니다. 페이지를 사용할 수 없습니다.'
 
 ## 로그인
 insta_id = input("Insert your id")
@@ -80,22 +81,38 @@ try:
     dmbtn.click()
 except:
     print ("DM 버튼 클릭 실패")
+    raise Exception
+
+try:
+    searchuser = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.EQ1Mr')))
+    searchuser.click()
+except:
+    print ("DM 쓰기 버튼 클릭 실패")
+    raise Exception
 
 for celeb in message_data_not_yet["celeb_id"]:
-    ### 보낼 메시지를 입력한다. celeb_id는 자동으로 메시지에 포함되게 한다.
     ## DM 쓰기 버튼 클릭
-    try:
-        searchuser = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.EQ1Mr')))
-        searchuser.click()
-    except:
-        print ("DM 쓰기 버튼 클릭 실패")
+    
 
     ## DM 받는 사람 입력
     try:
         searchuserbox = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'body > div.RnEpo.Yx5HN > div > div > div.Igw0E.IwRSH.eGOV_.vwCYk.i0EQd > div.TGYkm > div > div.HeuYH > input')))
+        #ActionChains(browser)\
+        #.move_to_element(searchuserbox).click()\
+        #.send_keys(Keys.CONTROL, 'a')\
+        #.send_keys(Keys.DELETE)\
+        #.send_keys(celeb)\
+        #.perform()
+        searchuserbox.click()
+        sleep(2)
+        searchuserbox.send_keys(Keys.CONTROL, 'a')
+        sleep(2)
+        searchuserbox.send_keys(Keys.DELETE)
+        sleep(2)
         searchuserbox.send_keys(celeb)
     except:
         print ("DM 받는 사람 입력 실패")
+        continue
 
     ## DM 받는 사람 목록 중에서 첫 번째 사람을 선택
     try:
@@ -105,6 +122,7 @@ for celeb in message_data_not_yet["celeb_id"]:
         firstuser.click()
     except:
         print("DM 받는 사람 선택 실패")
+        continue
 
     ## 다음 버튼 누르기
     try:
@@ -112,12 +130,14 @@ for celeb in message_data_not_yet["celeb_id"]:
         pressingnext.click()
     except:
         print ("다음 버튼 누르기 실패")
+        continue
 
     ## 텍스트 박스 찾기
     try:
         textbox = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[2]/textarea')))
     except:
         print("텍스트 박스 찾기 실패")
+        continue
 
     ## DM 보내기
     try:
@@ -138,4 +158,5 @@ for celeb in message_data_not_yet["celeb_id"]:
         print(celeb, "에게 DM 보내기 실패")
 
     
-    sleep(random.uniform(60,180))
+    #sleep(random.uniform(60,180))
+    sleep(random.uniform(6,10))
