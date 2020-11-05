@@ -119,6 +119,10 @@ for celeb in message_data_not_yet["celeb_id"]:
         wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@class='                    Igw0E   rBNOH        eGOV_     ybXk5    _4EzTm                                                                                   XfCBB          HVWg4                 ']")))
         sleep(2)
         firstuser = browser.find_element_by_xpath("//div[@class='                    Igw0E   rBNOH        eGOV_     ybXk5    _4EzTm                                                                                   XfCBB          HVWg4                 ']")
+        # 검색 결과 첫 번째 사람이 celeb 과 일치할 경우만 다음 단계로 진행
+        if celeb != firstuser.text.split("\n")[0]:
+            print(celeb, "은 아이디를 변경함")
+            continue
         firstuser.click()
     except:
         print("DM 받는 사람 선택 실패")
