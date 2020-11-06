@@ -9,6 +9,7 @@ from time import sleep
 import random
 import json
 import pandas as pd
+import sys
 
 ###################################################################################
 ## 보낼 메시지를 입력한다.
@@ -20,7 +21,9 @@ with open("backup/message.txt", "r", encoding="utf-8") as f:
 insta_id = input("Insert your id")
 insta_pwd= input("insert the password")
 
+## keyword 마다 변경
 ## getID.py로 만든 데이터를 로드. 열 이름은 [celeb_id, followers]
+## 메시지를 보낼 목록
 with open("backup/test.json", "r", encoding="utf-8") as f:
     json_data = f.read()
 
@@ -28,18 +31,26 @@ pd_data = pd.DataFrame(json.loads(json_data))
 pd_data = pd_data.astype({"celeb_id": str, "followers": int})
 
 ## dm.py로 만든 데이터를 로드. 열 이름은 [celeb_id, followers, message]
+## 메시지를 이미 보낸 목록
 with open("backup/data_DM.json", "r", encoding="utf-8") as f:
     json_data = f.read()
 message_data = pd.DataFrame(json.loads(json_data))
 
-## pd_data와 message_data의 괴리를 없앤다.
+## celeb 중에 아이디를 변경한 celeb. 그래서 쪽지를 못 보냄.
+#try:
+#    with open("backup/changed_name.txt", "r") as f:
+#        changed_name = eval(f.read())
+#except:
+#    changed_name = []
+
+## pd_data 에서 다음 두 가지를 제외한다.
+## 1. 이미 메시지를 전송한 celeb. message_data
 additional_celebid = list(set(pd_data["celeb_id"]) - set(message_data["celeb_id"]))
 if len(additional_celebid) > 0:
-    data_to_append = pd_data[pd_data["celeb_id"].str.contains("|".join(additional_celebid))]
-    message_data = message_data.append([data_to_append], ignore_index=True, sort=True).fillna("")
-
-## 메시지를 아직 안 보낸 celeb 목록
-message_data_not_yet = message_data[message_data["message"] == ""]
+    ## 메시지를 아직 안 보낸 celeb 목록
+    message_data_not_yet = pd_data[pd_data["celeb_id"].str.contains("|".join(additional_celebid))]
+else:
+    sys.exit("메시지는 이미 모두 보냈습니다.")
 
 webdriver_path = r"chromedriver_win32\chromedriver.exe" # Webdriver 가 저장된 위치
 browser = webdriver.Chrome(webdriver_path)
@@ -83,6 +94,7 @@ except:
     print ("DM 버튼 클릭 실패")
     raise Exception
 
+## DM 쓰기 버튼 클릭
 try:
     searchuser = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.EQ1Mr')))
     searchuser.click()
@@ -91,9 +103,6 @@ except:
     raise Exception
 
 for celeb in message_data_not_yet["celeb_id"]:
-    ## DM 쓰기 버튼 클릭
-    
-
     ## DM 받는 사람 입력
     try:
         searchuserbox = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'body > div.RnEpo.Yx5HN > div > div > div.Igw0E.IwRSH.eGOV_.vwCYk.i0EQd > div.TGYkm > div > div.HeuYH > input')))
@@ -111,8 +120,14 @@ for celeb in message_data_not_yet["celeb_id"]:
         sleep(2)
         searchuserbox.send_keys(celeb)
     except:
-        print ("DM 받는 사람 입력 실패")
-        continue
+        print("DM 받는 사람 입력 실패")
+        ## DM 내역 저장하기: 실패. 공란 처리
+        #message_data_to_append = message_data_not_yet.loc[message_data_not_yet['celeb_id'] == celeb].to_dict('r')[0]
+        #message_data_to_append["message"] = ""
+        #message_data = message_data.append(message_data_to_append, ignore_index=True)
+        #with open("backup/data_DM.json", "w", encoding="utf-8") as f:
+        #    f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
+        #continue
 
     ## DM 받는 사람 목록 중에서 첫 번째 사람을 선택
     try:
@@ -122,10 +137,22 @@ for celeb in message_data_not_yet["celeb_id"]:
         # 검색 결과 첫 번째 사람이 celeb 과 일치할 경우만 다음 단계로 진행
         if celeb != firstuser.text.split("\n")[0]:
             print(celeb, "은 아이디를 변경함")
+            ## DM 내역 저장하기: 실패. 공란 처리
+            message_data_to_append = message_data_not_yet.loc[message_data_not_yet['celeb_id'] == celeb].to_dict('r')[0]
+            message_data_to_append["message"] = ""
+            message_data = message_data.append(message_data_to_append, ignore_index=True)
+            with open("backup/data_DM.json", "w", encoding="utf-8") as f:
+                f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
             continue
         firstuser.click()
     except:
         print("DM 받는 사람 선택 실패")
+        print(celeb, "은 아이디를 변경함")
+        message_data_to_append = message_data_not_yet.loc[message_data_not_yet['celeb_id'] == celeb].to_dict('r')[0]
+        message_data_to_append["message"] = ""
+        message_data = message_data.append(message_data_to_append, ignore_index=True)
+        with open("backup/data_DM.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
         continue
 
     ## 다음 버튼 누르기
@@ -153,14 +180,16 @@ for celeb in message_data_not_yet["celeb_id"]:
         wait.until(EC.element_to_be_clickable((By.XPATH, send_xpath)))
         browser.find_element_by_xpath(send_xpath).click()
         print("메시지 보내기 성공")
-        ## DM 내역 저장하기
-        message_data.loc[message_data['celeb_id'] == celeb, "message"] = message
-        #message_data.loc[message_data['celeb_id'] == celeb, "message"] = "test"
+        ## DM 내역 저장하기: 성공
+        message_data_to_append = message_data_not_yet.loc[message_data_not_yet['celeb_id'] == celeb].to_dict('r')[0]
+        message_data_to_append["message"] = message
+        message_data = message_data.append(message_data_to_append, ignore_index=True)
         with open("backup/data_DM.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
     except:
         print(celeb, "에게 DM 보내기 실패")
 
     
-    #sleep(random.uniform(60,180))
-    sleep(random.uniform(6,10))
+    sleep(random.uniform(60,180))
+    #sleep(random.uniform(6,10))
+print("메시지 발송을 완료했습니다.")
