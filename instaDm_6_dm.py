@@ -21,10 +21,12 @@ with open("backup/message.txt", "r", encoding="utf-8") as f:
 insta_id = input("Insert your id")
 insta_pwd= input("insert the password")
 
-## keyword 마다 변경
+## filename 변경
 ## getID.py로 만든 데이터를 로드. 열 이름은 [celeb_id, followers]
 ## 메시지를 보낼 목록
-with open("backup/test.json", "r", encoding="utf-8") as f:
+filename = "test.json"
+print("대상 key 데이터",filename)
+with open("backup/" + filename, "r", encoding="utf-8") as f:
     json_data = f.read()
 
 pd_data = pd.DataFrame(json.loads(json_data))
@@ -94,15 +96,15 @@ except:
     print ("DM 버튼 클릭 실패")
     raise Exception
 
-## DM 쓰기 버튼 클릭
-try:
-    searchuser = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.EQ1Mr')))
-    searchuser.click()
-except:
-    print ("DM 쓰기 버튼 클릭 실패")
-    raise Exception
-
 for celeb in message_data_not_yet["celeb_id"]:
+    sleep(2)
+    ## DM 쓰기 버튼 클릭
+    try:
+        searchuser = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.EQ1Mr')))
+        searchuser.click()
+    except:
+        print ("DM 쓰기 버튼 클릭 실패")
+        raise Exception
     ## DM 받는 사람 입력
     try:
         searchuserbox = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'body > div.RnEpo.Yx5HN > div > div > div.Igw0E.IwRSH.eGOV_.vwCYk.i0EQd > div.TGYkm > div > div.HeuYH > input')))
@@ -121,6 +123,7 @@ for celeb in message_data_not_yet["celeb_id"]:
         searchuserbox.send_keys(celeb)
     except:
         print("DM 받는 사람 입력 실패")
+        webdriver.ActionChains(browser).send_keys(Keys.ESCAPE).perform()
         ## DM 내역 저장하기: 실패. 공란 처리
         #message_data_to_append = message_data_not_yet.loc[message_data_not_yet['celeb_id'] == celeb].to_dict('r')[0]
         #message_data_to_append["message"] = ""
@@ -143,6 +146,7 @@ for celeb in message_data_not_yet["celeb_id"]:
             message_data = message_data.append(message_data_to_append, ignore_index=True)
             with open("backup/data_DM.json", "w", encoding="utf-8") as f:
                 f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
+            webdriver.ActionChains(browser).send_keys(Keys.ESCAPE).perform()
             continue
         firstuser.click()
     except:
@@ -153,6 +157,7 @@ for celeb in message_data_not_yet["celeb_id"]:
         message_data = message_data.append(message_data_to_append, ignore_index=True)
         with open("backup/data_DM.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
+        webdriver.ActionChains(browser).send_keys(Keys.ESCAPE).perform()
         continue
 
     ## 다음 버튼 누르기
@@ -163,17 +168,26 @@ for celeb in message_data_not_yet["celeb_id"]:
         print ("다음 버튼 누르기 실패")
         continue
 
-    ## 텍스트 박스 찾기
-    try:
-        textbox = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[2]/textarea')))
-    except:
-        print("텍스트 박스 찾기 실패")
-        continue
+    ### 텍스트 박스 찾기
+    #try:
+    #    textbox = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[2]/textarea')))
+    #except:
+    #    print("텍스트 박스 찾기 실패")
+    #    continue
 
     ## DM 보내기
     try:
         ## textbox에 메시지 입력
+        sleep(5)
+        wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[2]/textarea')))
+        textbox = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[2]/textarea')))
+        print("textbox clicked")
+        wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[2]/textarea')))
         browser.execute_script("arguments[0].value = arguments[1]", browser.find_element_by_xpath('//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[2]/textarea'), message)
+        sleep(2)
+        textbox = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[2]/textarea')))
+        textbox.click()
+        textbox.send_keys(Keys.END)
         textbox.send_keys(Keys.SPACE)
         ## 버튼 클릭
         send_xpath = '//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[3]/button'
