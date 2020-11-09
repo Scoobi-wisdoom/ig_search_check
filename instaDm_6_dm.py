@@ -11,9 +11,16 @@ import json
 import pandas as pd
 import sys
 
+# key data
+key_data = "key1.json"
+# data_DM data
+data_DM ="data_DM.json"
+# message txt
+message_txt = "message.txt"
+
 ###################################################################################
 ## 보낼 메시지를 입력한다.
-with open("backup/message.txt", "r", encoding="utf-8") as f:
+with open("backup/"+message_txt, "r", encoding="utf-8") as f:
     message = f.read()
 #browser.find_element_by_tag_name("h2").text == '죄송합니다. 페이지를 사용할 수 없습니다.'
 
@@ -24,7 +31,7 @@ insta_pwd= input("insert the password")
 ## filename 변경
 ## getID.py로 만든 데이터를 로드. 열 이름은 [celeb_id, followers]
 ## 메시지를 보낼 목록
-filename = "test.json"
+filename = key_data
 print("대상 key 데이터",filename)
 with open("backup/" + filename, "r", encoding="utf-8") as f:
     json_data = f.read()
@@ -34,7 +41,7 @@ pd_data = pd_data.astype({"celeb_id": str, "followers": int})
 
 ## dm.py로 만든 데이터를 로드. 열 이름은 [celeb_id, followers, message]
 ## 메시지를 이미 보낸 목록
-with open("backup/data_DM.json", "r", encoding="utf-8") as f:
+with open("backup/"+ data_DM, "r", encoding="utf-8") as f:
     json_data = f.read()
 message_data = pd.DataFrame(json.loads(json_data))
 
@@ -134,17 +141,20 @@ for celeb in message_data_not_yet["celeb_id"]:
 
     ## DM 받는 사람 목록 중에서 첫 번째 사람을 선택
     try:
-        wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@class='                    Igw0E   rBNOH        eGOV_     ybXk5    _4EzTm                                                                                   XfCBB          HVWg4                 ']")))
-        sleep(2)
-        firstuser = browser.find_element_by_xpath("//div[@class='                    Igw0E   rBNOH        eGOV_     ybXk5    _4EzTm                                                                                   XfCBB          HVWg4                 ']")
+        sleep(5)
+        #wait.until(EC.element_to_be_clickable((By.XPATH, "//div[@class='                    Igw0E   rBNOH        eGOV_     ybXk5    _4EzTm                                                                                   XfCBB          HVWg4                 ']")))
+        wait.until(EC.element_to_be_clickable((By.XPATH, '/html/body/div[5]/div/div/div[2]/div[2]/div[1]/div/div[2]/div[1]/div/div')))
+        #firstuser = browser.find_element_by_xpath("//div[@class='                    Igw0E   rBNOH        eGOV_     ybXk5    _4EzTm                                                                                   XfCBB          HVWg4                 ']")
+        firstuser = browser.find_element_by_xpath('/html/body/div[5]/div/div/div[2]/div[2]/div[1]/div/div[2]/div[1]/div/div')
         # 검색 결과 첫 번째 사람이 celeb 과 일치할 경우만 다음 단계로 진행
-        if celeb != firstuser.text.split("\n")[0]:
+        #if celeb != firstuser.text.split("\n")[0]:
+        if celeb != firstuser.text:
             print(celeb, "은 아이디를 변경함")
             ## DM 내역 저장하기: 실패. 공란 처리
             message_data_to_append = message_data_not_yet.loc[message_data_not_yet['celeb_id'] == celeb].to_dict('r')[0]
             message_data_to_append["message"] = ""
             message_data = message_data.append(message_data_to_append, ignore_index=True)
-            with open("backup/data_DM.json", "w", encoding="utf-8") as f:
+            with open("backup/"+data_DM, "w", encoding="utf-8") as f:
                 f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
             webdriver.ActionChains(browser).send_keys(Keys.ESCAPE).perform()
             continue
@@ -155,7 +165,7 @@ for celeb in message_data_not_yet["celeb_id"]:
         message_data_to_append = message_data_not_yet.loc[message_data_not_yet['celeb_id'] == celeb].to_dict('r')[0]
         message_data_to_append["message"] = ""
         message_data = message_data.append(message_data_to_append, ignore_index=True)
-        with open("backup/data_DM.json", "w", encoding="utf-8") as f:
+        with open("backup/"+data_DM, "w", encoding="utf-8") as f:
             f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
         webdriver.ActionChains(browser).send_keys(Keys.ESCAPE).perform()
         continue
@@ -174,6 +184,21 @@ for celeb in message_data_not_yet["celeb_id"]:
     #except:
     #    print("텍스트 박스 찾기 실패")
     #    continue
+
+    ## DM 대상자가 그 대상자가 맞는지 check. 아니면 insta 에서 우리 계정을 막은 것
+    try:
+        sleep(5)
+        # dm 대상자의 profile name xpath
+        #profile_name_path = '//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[1]/div/div/div[2]/div/div[2]/button/div/div/div'
+        profile_name_path = '/html/body/div[1]/section/div/div[2]/div/div/div[2]/div[1]/div/div/div[2]/div/div[2]/button/div/div/div'
+        wait.until(EC.element_to_be_clickable((By.XPATH, profile_name_path)))
+        profile_name = wait.until(EC.element_to_be_clickable((By.XPATH, profile_name_path))).text
+        if profile_name != celeb:
+            print("문제가 발생했습니다. 다시 시도해주세요")
+            break
+    except:
+        print("우리 계정 block 여부 판단 실패")
+        break
 
     ## DM 보내기
     try:
@@ -198,12 +223,12 @@ for celeb in message_data_not_yet["celeb_id"]:
         message_data_to_append = message_data_not_yet.loc[message_data_not_yet['celeb_id'] == celeb].to_dict('r')[0]
         message_data_to_append["message"] = message
         message_data = message_data.append(message_data_to_append, ignore_index=True)
-        with open("backup/data_DM.json", "w", encoding="utf-8") as f:
+        with open("backup/"+data_DM, "w", encoding="utf-8") as f:
             f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
     except:
         print(celeb, "에게 DM 보내기 실패")
 
     
-    sleep(random.uniform(60,180))
+    sleep(random.uniform(180,240))
     #sleep(random.uniform(6,10))
 print("메시지 발송을 완료했습니다.")
