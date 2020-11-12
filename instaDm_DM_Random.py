@@ -12,16 +12,44 @@ import pandas as pd
 import sys
 import re
 import os
-####################################### 사용자 정의 함수 시작############################################
 
-####################################### 사용자 정의 함수 끝  ############################################
+count_limit = 74
 
+## 로그인
+insta_id = input("Insert your id")
+insta_pwd = input("insert the password")
 
-## key data
-#key_data = "key1.json"
+webdriver_path = r"chromedriver_win32\chromedriver.exe"  # Webdriver 가 저장된 위치
+browser = webdriver.Chrome(webdriver_path)
 
-## message txt
-#message_txt = "message.txt"
+### 브라우저 크기 설정
+browser.set_window_size(1051, 806)
+
+browser.get("https://www.instagram.com/")
+
+wait = WebDriverWait(browser, 30)
+
+user = wait.until(EC.presence_of_element_located((By.NAME, "username")))
+passw = browser.find_element_by_name("password")
+
+ActionChains(browser) \
+    .move_to_element(user).click() \
+    .send_keys(insta_id) \
+    .move_to_element(passw).click() \
+    .send_keys(insta_pwd) \
+    .perform()
+
+passw.submit()
+print("로그인 성공")
+
+## "나중에 하기"
+wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#react-root > section > main > div > div > div > div > button")))
+browser.find_element_by_css_selector("#react-root > section > main > div > div > div > div > button").click()
+print("로그인 정보 저장 나중에 하기 성공")
+
+ActionChains(browser).move_to_element(wait.until(EC.element_to_be_clickable(
+    (By.CSS_SELECTOR, "body > div.RnEpo.Yx5HN > div > div > div > div.mt3GC > button.aOOlW.HoLwm")))).click().perform()
+print("알림 설정 나중에 하기 성공")
 
 print("키워드", 2, "개까지만 랜덤 적용")
 
@@ -41,101 +69,69 @@ for filename in os.listdir("backup/messages"):
     if len(msg) > 0:
         message_pool.append(msg[0])
 
-# message_pool 편집으로 DM 을 보낸다.
-# 추가할 코드
-
 # data_DM data
 data_DM ="data_DM_random.json"
 
-# messages 중 무작위로 선택
-message_txt = random.sample(message_pool, 1)[0]
-# key 선택: 1, 2, 3, ...
-key = re.findall(r"message(.*)_.*$", message_txt)[0]
-key_data = key_data_pool[int(key)-1]
+# 실행 횟수 체크
+count = 0
+# message_pool 편집으로 DM 을 보낸다.
+while len(message_pool) > 0 and count < count_limit:
+    # 실행 횟수
+    count += 1
 
-# key_data 중 안 보낸 목록이 있는지 체크
-## 메시지를 보낼 목록
-## getID.py로 만든 데이터를 로드. 열 이름은 [celeb_id, followers]
-print("대상 key 데이터",key_data)
-with open("backup/" + key_data, "r", encoding="utf-8") as f:
-    json_data = f.read()
+    # messages 중 무작위로 선택
+    message_txt = random.sample(message_pool, 1)[0]
+    # key 선택: 1, 2, 3, ...
+    key = re.findall(r"message(.*)_.*$", message_txt)[0]
+    key_data = key_data_pool[int(key)-1]
 
-pd_data = pd.DataFrame(json.loads(json_data))
-pd_data = pd_data.astype({"celeb_id": str, "followers": int})
+    # key_data 중 안 보낸 목록이 있는지 체크
+    ## 메시지를 보낼 목록
+    ## getID.py로 만든 데이터를 로드. 열 이름은 [celeb_id, followers]
+    print("대상 key 데이터",key_data)
+    with open("backup/" + key_data, "r", encoding="utf-8") as f:
+        json_data = f.read()
 
-## dm.py로 만든 데이터를 로드. 열 이름은 [celeb_id, followers, message, key]
-## 메시지를 이미 보낸 목록
-with open("backup/"+ data_DM, "r", encoding="utf-8") as f:
-    json_data = f.read()
-message_data = pd.DataFrame(json.loads(json_data))
+    pd_data = pd.DataFrame(json.loads(json_data))
+    pd_data = pd_data.astype({"celeb_id": str, "followers": int})
 
-## pd_data 에서 다음을 제외한다.
-## 이미 메시지를 전송한 celeb. message_data
-additional_celebid = list(set(pd_data["celeb_id"]) - set(message_data["celeb_id"]))
-if len(additional_celebid) < 1:
-    sys.exit("메시지는 이미 key", key ,"에 모두 보냈습니다.")
-    # 이미 보낸 key 는 message_pool 에서 제외
-    for message in message_pool:
-        exclude = re.findall(r"message"+ key +"_.*$", message)[0]
-        message_pool.remove(exclude)
+    ## dm.py로 만든 데이터를 로드. 열 이름은 [celeb_id, followers, message, key]
+    ## 메시지를 이미 보낸 목록
+    with open("backup/"+ data_DM, "r", encoding="utf-8") as f:
+        json_data = f.read()
+    message_data = pd.DataFrame(json.loads(json_data))
 
-## 메시지를 아직 안 보낸 celeb 목록
-message_data_not_yet = pd_data[pd_data["celeb_id"].str.contains("|".join(additional_celebid))]
+    ## pd_data 에서 다음을 제외한다.
+    ## 이미 메시지를 전송한 celeb. message_data
+    additional_celebid = list(set(pd_data["celeb_id"]) - set(message_data["celeb_id"]))
+    if len(additional_celebid) < 1:
+        print("메시지는 이미 key", key, "에 모두 보냈습니다.")
+        # 이미 보낸 key 는 message_pool 에서 제외
+        for message in message_pool:
+            exclude = re.findall(r"message"+ key +"_.*$", message)[0]
+            message_pool.remove(exclude)
+        continue
 
-
-###################################################################################
-## 보낼 메시지를 입력한다.
-with open("backup/messages/"+message_txt, "r", encoding="utf-8") as f:
-    message = f.read()
-
-
-## 로그인
-insta_id = input("Insert your id")
-insta_pwd= input("insert the password")
-
-webdriver_path = r"chromedriver_win32\chromedriver.exe" # Webdriver 가 저장된 위치
-browser = webdriver.Chrome(webdriver_path)
-
-### 브라우저 크기 설정
-browser.set_window_size(1051, 806)
-
-browser.get("https://www.instagram.com/")
-
-wait = WebDriverWait(browser, 30)
+    ## 메시지를 아직 안 보낸 celeb 목록
+    message_data_not_yet = pd_data[pd_data["celeb_id"].str.contains("|".join(additional_celebid))]
 
 
-user = wait.until(EC.presence_of_element_located((By.NAME, "username")))
-passw = browser.find_element_by_name("password")
-
-ActionChains(browser)\
-    .move_to_element(user).click()\
-    .send_keys(insta_id)\
-    .move_to_element(passw).click()\
-    .send_keys(insta_pwd)\
-    .perform()
-
-passw.submit()
-print("로그인 성공")
-
-## "나중에 하기"
-wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "#react-root > section > main > div > div > div > div > button")))
-browser.find_element_by_css_selector("#react-root > section > main > div > div > div > div > button").click()
-print("로그인 정보 저장 나중에 하기 성공")
-
-ActionChains(browser).move_to_element(wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "body > div.RnEpo.Yx5HN > div > div > div > div.mt3GC > button.aOOlW.HoLwm")))).click().perform()
-print("알림 설정 나중에 하기 성공")
+    ###################################################################################
+    ## 보낼 메시지를 입력한다.
+    with open("backup/messages/"+message_txt, "r", encoding="utf-8") as f:
+        message = f.read()
 
 
-############################################ https://github.com/Donald-K-Lee/InstagramDMBot/blob/master/InstagramDMBot.py ############################################
-## DM 버튼 클릭
-try:
-    dmbtn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.xWeGp')))
-    dmbtn.click()
-except:
-    print ("DM 버튼 클릭 실패")
-    raise Exception
+    ############################################ https://github.com/Donald-K-Lee/InstagramDMBot/blob/master/InstagramDMBot.py ############################################
+    ## DM 버튼 클릭
+    try:
+        dmbtn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '.xWeGp')))
+        dmbtn.click()
+    except:
+        print ("DM 버튼 클릭 실패")
+        raise Exception
 
-for celeb in message_data_not_yet["celeb_id"]:
+    celeb = message_data_not_yet["celeb_id"][0]
     sleep(2)
     ## DM 쓰기 버튼 클릭
     try:
@@ -176,9 +172,10 @@ for celeb in message_data_not_yet["celeb_id"]:
         #if celeb != firstuser.text.split("\n")[0]:
         if celeb != firstuser.text:
             print(celeb, "은 아이디를 변경함")
-            ## DM 내역 저장하기: 실패. 공란 처리
+            ## DM 내역 저장하기: 공란 처리
             message_data_to_append = message_data_not_yet.loc[message_data_not_yet['celeb_id'] == celeb].to_dict('r')[0]
             message_data_to_append["message"] = ""
+            message_data_to_append["key"] = int(key)
             message_data = message_data.append(message_data_to_append, ignore_index=True)
             with open("backup/"+data_DM, "w", encoding="utf-8") as f:
                 f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
@@ -188,8 +185,10 @@ for celeb in message_data_not_yet["celeb_id"]:
     except:
         print("DM 받는 사람 선택 실패")
         print(celeb, "은 아이디를 변경함")
+        ## DM 내역 저장하기: 공란 처리
         message_data_to_append = message_data_not_yet.loc[message_data_not_yet['celeb_id'] == celeb].to_dict('r')[0]
         message_data_to_append["message"] = ""
+        message_data_to_append["key"] = int(key)
         message_data = message_data.append(message_data_to_append, ignore_index=True)
         with open("backup/"+data_DM, "w", encoding="utf-8") as f:
             f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
@@ -248,13 +247,14 @@ for celeb in message_data_not_yet["celeb_id"]:
         ## DM 내역 저장하기: 성공
         message_data_to_append = message_data_not_yet.loc[message_data_not_yet['celeb_id'] == celeb].to_dict('r')[0]
         message_data_to_append["message"] = message
+        message_data_to_append["key"] = int(key)
         message_data = message_data.append(message_data_to_append, ignore_index=True)
         with open("backup/"+data_DM, "w", encoding="utf-8") as f:
             f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
     except:
         print(celeb, "에게 DM 보내기 실패")
 
-    
+
     sleep(random.uniform(120,180))
     #sleep(random.uniform(6,10))
 print("메시지 발송을 완료했습니다.")
