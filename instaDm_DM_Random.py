@@ -13,7 +13,7 @@ import sys
 import re
 import os
 
-count_limit = 74
+count_limit = 80
 
 ## 로그인
 insta_id = input("Insert your id")
@@ -113,7 +113,7 @@ while len(message_pool) > 0 and count < count_limit:
         continue
 
     ## 메시지를 아직 안 보낸 celeb 목록
-    message_data_not_yet = pd_data[pd_data["celeb_id"].str.contains("|".join(additional_celebid))]
+    message_data_not_yet = pd_data[pd_data["celeb_id"].isin(additional_celebid)]
 
 
     ###################################################################################
@@ -142,6 +142,7 @@ while len(message_pool) > 0 and count < count_limit:
         raise Exception
     ## DM 받는 사람 입력
     try:
+        sleep(2)
         searchuserbox = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'body > div.RnEpo.Yx5HN > div > div > div.Igw0E.IwRSH.eGOV_.vwCYk.i0EQd > div.TGYkm > div > div.HeuYH > input')))
         searchuserbox.click()
         sleep(2)
@@ -152,6 +153,7 @@ while len(message_pool) > 0 and count < count_limit:
         searchuserbox.send_keys(celeb)
     except:
         print("DM 받는 사람 입력 실패")
+        print("data_DM_random.json 에 저장하지 않는다.")
         webdriver.ActionChains(browser).send_keys(Keys.ESCAPE).perform()
         ## DM 내역 저장하기: 실패. 공란 처리
         #message_data_to_append = message_data_not_yet.loc[message_data_not_yet['celeb_id'] == celeb].to_dict('r')[0]
@@ -159,7 +161,7 @@ while len(message_pool) > 0 and count < count_limit:
         #message_data = message_data.append(message_data_to_append, ignore_index=True)
         #with open("backup/data_DM.json", "w", encoding="utf-8") as f:
         #    f.write(json.dumps(message_data.to_dict(), ensure_ascii=False))
-        #continue
+        continue
 
     ## DM 받는 사람 목록 중에서 첫 번째 사람을 선택
     try:
@@ -255,6 +257,6 @@ while len(message_pool) > 0 and count < count_limit:
         print(celeb, "에게 DM 보내기 실패")
 
 
-    sleep(random.uniform(120,180))
+    sleep(random.uniform(180,240))
     #sleep(random.uniform(6,10))
 print("메시지 발송을 완료했습니다.")
